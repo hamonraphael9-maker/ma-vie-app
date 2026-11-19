@@ -1433,17 +1433,20 @@ function peForm(f,g){switch(f.dataset.form){
  return false}
 
 /* ---------- Niveaux, quêtes, succès ---------- */
-var RANKS=[['E','Recrue'],['D','Apprenti'],['C','Initié'],['B','Confirmé'],['A','Expert'],['S','Maître'],['SS','Champion'],['SSS','Grand maître'],['','Mythique'],['','Légende']];
-var ROM=['I','II','III','IV','V'];
+var RANKS=[['E','Recrue'],['D','Apprenti'],['C','Initié'],['B','Confirmé'],['A','Expert'],['S','Champion'],['SS','Maître'],['SSS','Mythique'],['','Légende'],['','Grand maître']];
+var RSTART=[1,6,11,16,21,26,31,37,43,50];
+var ROM=['I','II','III','IV','V','VI','VII'];
 var BTIER=[['f','Facile',100],['m','Moyen',300],['d','Difficile',1000],['l','Légendaire',5000]];
-function GM(){if(!S.gm)S.gm={rw:[],lv:1};var g=S.gm;if(!g.rw)g.rw=[];if(!g.cnt)g.cnt={ok:0,mac:0,sl:0,wa:0,bm:0};if(!g.run)g.run={ok:0,jr:0};if(!g.best)g.best={ok:0,jr:0};if(!g.mx)g.mx={};if(g.xpc==null)g.xpc=0;if(g.qxc==null)g.qxc=0;return g}
+function GM(){if(!S.gm)S.gm={rw:[],lv:1};var g=S.gm;if(!g.rw)g.rw=[];if(!g.cnt)g.cnt={ok:0,mac:0,sl:0,wa:0,bm:0};if(!g.run)g.run={ok:0,jr:0};if(!g.best)g.best={ok:0,jr:0};if(!g.mx)g.mx={};if(g.xpc==null)g.xpc=0;if(g.qxc==null)g.qxc=0;if(g.sbc==null)g.sbc=0;if(g.bcc==null)g.bcc=0;if(g.spent==null)g.spent=0;
+ if(!g.seeded){g.seeded=1;if(!g.rw.length){[['Petite récompense (resto, soirée série…)',150,1],['Moyenne récompense (livre, sortie…)',600,1],['Grande récompense (tenue, écouteurs…)',2500,1],['Rang D : un plaisir de 10 à 15 €',0,6],['Rang C : environ 30 €',0,11],['Rang B : environ 60 €',0,16],['Rang A : environ 100 €, une journée ou un week-end',0,21]].forEach(function(x){g.rw.push({id:uid(),t:x[0],cost:x[1],lvl:x[2],got:false,n:0})})}}
+ return g}
 function xpFor(L){if(L<=1)return 0;if(L>=50)return 300000;return 125*(L-1)*(L-1)}
 function lvOf(xp){var L=1;while(L<50&&xp>=xpFor(L+1))L++;return L}
-function gmLabel(L){var r=RANKS[Math.min(9,Math.floor((L-1)/5))];return (r[0]?'Rang '+r[0]+' · ':'')+r[1]+' '+ROM[(L-1)%5]}
+function gmLabel(L){var i=0;while(i<9&&L>=RSTART[i+1])i++;var r=RANKS[i];return (r[0]?'Rang '+r[0]+' · ':'')+r[1]+(i<9?' '+ROM[L-RSTART[i]]:'')}
 function gmStart(){return S.start||addD(todayK(),-60)}
 function gmDay(d){var it=[],st=dayStat(d),p;
  if(st.n&&st.k){it.push(['Habitudes ('+st.k+'/'+st.n+')',st.k*10]);if(okDay(d))it.push(['Journée réussie',30])}
- var tk=S.tasks.filter(function(x){return x.done&&x.doneAt===d}).length;if(tk)it.push(['Tâches faites ('+tk+')',tk*10]);
+ var tk=Math.min(5,S.tasks.filter(function(x){return x.done&&x.doneAt===d}).length);if(tk)it.push(['Tâches faites ('+tk+(tk>=5?', plafond':'')+')',tk*10]);
  var ss=(S.mu&&S.mu.sess||[]).filter(function(x){return x.d===d});if(ss.length){it.push(['Séance de muscu',ss.length*40]);var pr=0;ss.forEach(function(x){pr+=(x.prs||[]).length});if(pr)it.push(['Records battus ('+pr+')',pr*10])}
  var pg=bkPages(d);if(pg>0){p=15+(PE().pgoal&&pg>=PE().pgoal?10:0);it.push(['Lecture ('+pg+' pages)',p])}
  if(jrFilled(jrE(d)))it.push(['Journal',15]);
@@ -1460,15 +1463,19 @@ function gmFlags(d){return {ok:okDay(d),mac:dayMacros(d).k>0&&macrosOk(d),sl:!!s
 function gmAdvance(){var G=GM(),t=todayK(),st=gmStart(),ch=false;
  if(!G.cd||G.cd<addD(st,-1))G.cd=addD(st,-1);
  while(addD(G.cd,1)<t&&addD(G.cd,1)>=st){var d=addD(G.cd,1),f=gmFlags(d);G.xpc+=gmDay(d).xp;
-  ['ok','jr'].forEach(function(k){if(f[k]){G.run[k]++;if(G.run[k]>G.best[k])G.best[k]=G.run[k]}else G.run[k]=0});
+  if(f.ok){G.run.ok++;if(G.run.ok>G.best.ok)G.best.ok=G.run.ok;G.sbc+=G.run.ok>=100?10:G.run.ok>=30?5:G.run.ok>=7?2:0}else{var wkr=mondayOf(d);if(G.run.ok>0&&G.rwk!==wkr){G.rwk=wkr;G.rest=(G.rest||0)+1}else G.run.ok=0}
+  if(f.jr){G.run.jr++;if(G.run.jr>G.best.jr)G.best.jr=G.run.jr}else G.run.jr=0;
   ['ok','mac','sl','wa'].forEach(function(k){if(f[k])G.cnt[k]++});G.cd=d;ch=true}
  if(G.cd<addD(st,-1)){G.cd=addD(st,-1)}
  if(!G.qd)G.qd=addD(mondayOf(st),-7);
  while(addD(G.qd,7)<mondayOf(t)){var ws=addD(G.qd,7);gmWeekQ(ws).forEach(function(q){if(q.done)G.qxc+=q.xp});G.qd=ws;ch=true}
  if(!G.bmd)G.bmd=mKey(addD(st,-1));
  var cm=mKey(t);while(true){var nx=new Date(+G.bmd.slice(0,4),+G.bmd.slice(5,7),1),nk=nx.getFullYear()+'-'+pad2(nx.getMonth()+1);if(nk>=cm)break;
-  var sp=peSpent(nk),n=PE().tx.filter(function(x){return mKey(x.d)===nk}).length;if(PE().bud>0&&n>0&&sp<=PE().bud)G.cnt.bm++;G.bmd=nk;ch=true}
+  var sp=peSpent(nk),n=PE().tx.filter(function(x){return mKey(x.d)===nk}).length;if(PE().bud>0&&n>0&&sp<=PE().bud)G.cnt.bm++;var bm=gmMonthOk(nk);if(bm.n>0&&bm.ok>=bm.n){G.bcc+=300;G.bossn=(G.bossn||0)+1}G.bmd=nk;ch=true}
  if(ch)save()}
+function gmMonthOk(mk,upTo){var st=gmStart(),y=+mk.slice(0,4),m=+mk.slice(5,7),dim=new Date(y,m,0).getDate(),el=0,ok=0,i,d,t=todayK();
+ for(i=1;i<=dim;i++){d=mk+'-'+pad2(i);if(d<st)continue;el++;if(d<=t&&okDay(d))ok++}
+ return {el:el,ok:ok,n:el>=20?Math.ceil(el*0.75):0}}
 function mxv(k,v){var G=GM();if(v>(G.mx[k]||0))G.mx[k]=v;return G.mx[k]||0}
 function gmVals(L){var G=GM(),t=todayK(),f=gmStart()<=t?gmFlags(t):{},m=MU(),ton=0,rec=0,gd=0;
  m.sess.forEach(function(s){ton+=vol(s)/1000;rec+=(s.prs||[]).length});(m.goals||[]).forEach(function(g){if(goPct(g)>=1)gd++});
@@ -1495,7 +1502,7 @@ function gmAll(){var t=todayK(),st=gmStart(),G;gmAdvance();G=GM();var started=st
  if(ws)gmWeekQ(ws).forEach(function(q){if(q.done)qx+=q.xp});
  var v0=gmVals(1),tot0=xp+qx+gmBadgeBonus(v0,false),L0=lvOf(tot0),v=gmVals(L0),tot=tot0+gmBadgeBonus(v,true),L=lvOf(tot),a=xpFor(L),b=L<50?xpFor(L+1):xpFor(50),wxp=0,k;
  if(started){var wk=mondayOf(t);for(k=0;k<7;k++){var dd=addD(wk,k);if(dd<=t&&dd>=st)wxp+=(dd===t?td.xp:(gmDay(dd).xp))}}
- return {xp:tot,L:L,a:a,b:b,p:L>=50?1:(tot-a)/(b-a),today:td,wxp:wxp,qx:qx,bon:tot-xp-qx,vals:v,started:started,st:st}}
+ return {coins:Math.floor(tot/10)+G.sbc+G.bcc-G.spent,xp:tot,L:L,a:a,b:b,p:L>=50?1:(tot-a)/(b-a),today:td,wxp:wxp,qx:qx,bon:tot-xp-qx,vals:v,started:started,st:st}}
 function gmBanner(){var g=gmAll();return '<a class="card" href="#niveaux" style="display:flex;flex-direction:column;gap:6px;text-decoration:none;color:inherit"><div class="row" style="align-items:baseline"><b style="font:600 18px var(--disp)">Niveau '+g.L+' · '+gmLabel(g.L)+'</b><span class="small mute">'+(g.started?(g.L>=50?'niveau maximum':(g.xp-g.a)+' / '+(g.b-g.a)+' points'):'dès le '+dLab(g.st))+'</span></div><div class="bar"><i style="width:'+Math.round(g.p*100)+'%;background:var(--ochre)"></i></div></a>'}
 function viewNiveaux(){var g=gmAll(),G=GM(),t=todayK();
  if(g.L>(G.lv||1)&&g.started){setTimeout(function(){toast('Niveau '+g.L+' atteint : '+gmLabel(g.L)+' !')},300)}if(g.L!==G.lv){G.lv=g.L;save()}
@@ -1503,18 +1510,22 @@ function viewNiveaux(){var g=gmAll(),G=GM(),t=todayK();
  var tl=g.today.items.length?g.today.items.map(function(x){return '<div class="row" style="font-size:14px"><span>'+esc(x[0])+'</span><b>+'+x[1]+'</b></div>'}).join(''):'<p class="mute" style="margin:0">Rien de gagné pour l’instant aujourd’hui.</p>';
  var today='<section class="card" style="display:flex;flex-direction:column;gap:8px"><div class="row" style="align-items:baseline"><h3>Aujourd’hui</h3><b style="font:500 24px var(--disp)">+'+g.today.xp+'</b></div>'+tl+'<div class="small mute">Cette semaine : +'+g.wxp+' points</div></section>';
  var qs=gmWeekQ(mondayOf(t)),quests='<section class="card" style="display:flex;flex-direction:column;gap:10px"><div class="row" style="align-items:baseline"><h3>Quêtes de la semaine</h3><span class="small mute">+100 points chacune</span></div>'+qs.map(function(q){return '<div style="display:flex;flex-direction:column;gap:4px"><div class="row" style="font-size:14px"><span>'+(q.done?'✓ ':'')+'<b>'+q.t+'</b></span><span>'+Math.min(q.v,q.n)+' / '+q.n+' · +'+q.xp+'</span></div><div class="bar"><i style="width:'+Math.min(100,q.v/q.n*100)+'%;background:'+(q.done?'var(--sage)':'var(--ochre)')+'"></i></div>'+(q.end&&!q.done&&q.w?'<div class="small mute">Validée à la fin de la semaine.</div>':'')+'</div>'}).join('')+'</section>';
- var rws=G.rw.slice().sort(function(a,b){return a.lvl-b.lvl}),rw='<section class="card" style="display:flex;flex-direction:column;gap:8px"><div class="row" style="align-items:baseline"><h3>Mes récompenses</h3><button class="btn sm" data-act="gmrw">+ Ajouter</button></div>'+(rws.length?rws.map(function(r){var ok=g.L>=r.lvl;return '<div style="display:flex;gap:10px;align-items:center;min-height:52px;border-top:1px solid var(--line);padding:6px 0"><button data-act="gmrw" data-id="'+r.id+'" style="flex:1;min-width:0;border:0;background:none;color:inherit;font:inherit;text-align:left;'+(ok?'':'opacity:.55')+'"><b style="display:block;font-size:14px">'+esc(r.t)+'</b><span class="small mute">Niveau '+r.lvl+(r.got?' · obtenue':ok?' · débloquée':'')+'</span></button>'+(ok&&!r.got?'<button class="btn sm primary" data-act="gmget" data-id="'+r.id+'">Réclamer</button>':'')+'</div>'}).join(''):'<p class="mute" style="margin:0">Choisis une vraie récompense (un resto, un achat, une soirée) et le niveau qui la débloque.</p>')+'</section>';
+ var rws=G.rw.slice().sort(function(a,b){return (a.cost||0)-(b.cost||0)||a.lvl-b.lvl}),rwRow=function(r){var c=r.cost||0,okL=g.L>=r.lvl,ok=okL&&(!c||g.coins>=c),gone=!c&&r.got;return '<div style="display:flex;gap:10px;align-items:center;min-height:52px;border-top:1px solid var(--line);padding:6px 0"><button data-act="gmrw" data-id="'+r.id+'" style="flex:1;min-width:0;border:0;background:none;color:inherit;font:inherit;text-align:left;'+(ok||gone?'':'opacity:.55')+'"><b style="display:block;font-size:14px">'+esc(r.t)+'</b><span class="small mute">'+(c?fmt(c)+' pièces'+(r.lvl>1?' · niveau '+r.lvl:'')+(r.n?' · prise '+r.n+' fois':''):'Niveau '+r.lvl+(r.got?' · obtenue':okL?' · débloquée':''))+'</span></button>'+(ok&&!gone?'<button class="btn sm primary" data-act="gmget" data-id="'+r.id+'">Réclamer</button>':'')+'</div>'};
+ var shop=rws.filter(function(r){return r.cost>0}),rk=rws.filter(function(r){return !(r.cost>0)});
+ var rw='<section class="card" style="display:flex;flex-direction:column;gap:8px"><div class="row" style="align-items:baseline"><h3>Mes récompenses</h3><button class="btn sm" data-act="gmrw">+ Ajouter</button></div><div class="small mute">Tu as <b>'+fmt(g.coins)+' pièces</b> : 1 pièce pour 10 points, plus les bonus de série et le boss du mois.</div>'+(shop.length?'<div class="eyebrow" style="margin-top:6px">À acheter avec des pièces</div>'+shop.map(rwRow).join(''):'')+(rk.length?'<div class="eyebrow" style="margin-top:10px">Récompenses de rang</div>'+rk.map(rwRow).join(''):'')+(rws.length?'':'<p class="mute" style="margin:0">Aucune récompense pour l’instant.</p>')+'</section>';
+ var bs=gmMonthOk(mKey(t)),mons=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'],boss=bs.n?'<section class="card" style="display:flex;flex-direction:column;gap:8px"><div class="row" style="align-items:baseline"><h3>Boss du mois</h3><span class="small mute">+300 pièces</span></div><div class="row" style="font-size:14px"><span>'+(bs.ok>=bs.n?'✓ ':'')+'<b>'+bs.n+' journées réussies en '+mons[+mKey(t).slice(5,7)-1]+'</b></span><span>'+bs.ok+' / '+bs.n+'</span></div><div class="bar"><i style="width:'+Math.min(100,bs.ok/bs.n*100)+'%;background:'+(bs.ok>=bs.n?'var(--sage)':'var(--ochre)')+'"></i></div><div class="small mute">Validé à la fin du mois.'+(G.bossn?' Déjà battu '+G.bossn+' fois.':'')+'</div></section>':'';
+ var rn=G.run.ok,strk='<section class="card" style="display:flex;flex-direction:column;gap:4px"><div class="row" style="align-items:baseline"><h3>Série de journées réussies</h3><b style="font:500 22px var(--disp)">'+rn+' j</b></div><div class="small mute">Bonus de pièces par jour réussi : +2 dès 7 jours, +5 dès 30, +10 dès 100. Un jour raté par semaine ne casse pas la série (jour de repos).</div></section>';
  var v=g.vals,tc={f:[0,0],m:[0,0],d:[0,0],l:[0,0]};
  var rows=BDEF.map(function(d){var nx=null,dn=0;d[1].forEach(function(b){var ok=v[b[1]]>=b[2];tc[b[0]][1]++;if(ok){dn++;tc[b[0]][0]++}else if(!nx)nx=b});
   return '<div style="display:flex;flex-direction:column;gap:4px"><div class="row" style="font-size:14px"><b>'+d[0]+'</b><span class="small mute">'+dn+' / '+d[1].length+'</span></div>'+(nx?'<div class="small mute">Prochain · '+BTIER.filter(function(x){return x[0]===nx[0]})[0][1]+' : '+nx[3]+' · '+fmt(Math.floor(v[nx[1]]))+' / '+fmt(nx[2])+' · +'+bonusOf(nx[0])+'</div><div class="bar"><i style="width:'+Math.min(100,v[nx[1]]/nx[2]*100)+'%;background:var(--sage)"></i></div>':'<div class="small" style="color:var(--sage-ink)">★ Tous les succès de ce domaine sont débloqués.</div>')+'</div>'}).join('');
  var sum=BTIER.map(function(x){return x[1]+' '+tc[x[0]][0]+'/'+tc[x[0]][1]}).join(' · ');
  var badges='<section class="card" style="display:flex;flex-direction:column;gap:12px"><div class="row" style="align-items:baseline"><h3>Succès</h3><span class="small mute">+'+fmt(g.bon)+' points gagnés</span></div><div class="small mute">'+sum+'</div>'+rows+'<div class="small mute">Bonus : facile +100 · moyen +300 · difficile +1 000 · légendaire +5 000. Les plus durs prennent des années.</div></section>';
- var rules='<section class="card"><h3>Comment gagner des points</h3><div class="small mute" style="line-height:1.6;margin-top:6px">Habitude faite +10 · journée réussie +30 · tâche +10 · séance +40 · record +10 · lecture +15 · journal +15 · nutrition tenue +20 · courses faites +20 · quêtes +100 · succès (bonus). 50 niveaux, 300 000 points pour le dernier.</div></section>';
- return '<div style="display:flex;flex-direction:column;gap:14px">'+hero+today+quests+rw+badges+rules+'</div>'}
-A.gmrw=function(e){var G=GM(),r=e.dataset.id?G.rw.filter(function(x){return x.id===e.dataset.id})[0]:null;r=r||{t:'',lvl:Math.max(2,(G.lv||1)+1)};
- openModal('<h2>'+(r.id?'Modifier la récompense':'Nouvelle récompense')+'</h2><form data-form="gmrw" data-id="'+(r.id||'')+'" style="display:flex;flex-direction:column;gap:12px">'+fld('gr-t','Récompense',inp('gr-t',r.t,'text','required placeholder="Un resto"'))+fld('gr-l','Niveau qui la débloque',inp('gr-l',r.lvl,'number','min="2" inputmode="numeric" required'))+'<div class="acts">'+(r.id?'<button type="button" class="btn terra" data-act="gmrwdel" data-id="'+r.id+'">Supprimer</button>':'')+'<button type="button" class="btn" data-act="close">Annuler</button><button class="btn primary" type="submit">Enregistrer</button></div></form>')};
+ var rules='<section class="card"><h3>Comment gagner des points</h3><div class="small mute" style="line-height:1.6;margin-top:6px">Habitude faite +10 · journée réussie +30 · tâche +10 (5 par jour maximum) · séance +40 · record +10 · lecture +15 · journal +15 · nutrition tenue +20 · courses faites +20 · quêtes +100 · succès (bonus). 50 niveaux, 300 000 points pour le dernier. Les jours passés se figent à l’ouverture du lendemain.</div></section>';
+ return '<div style="display:flex;flex-direction:column;gap:14px">'+hero+today+quests+boss+strk+rw+badges+rules+'</div>'}
+A.gmrw=function(e){var G=GM(),r=e.dataset.id?G.rw.filter(function(x){return x.id===e.dataset.id})[0]:null;r=r||{t:'',cost:150,lvl:1};
+ openModal('<h2>'+(r.id?'Modifier la récompense':'Nouvelle récompense')+'</h2><form data-form="gmrw" data-id="'+(r.id||'')+'" style="display:flex;flex-direction:column;gap:12px">'+fld('gr-t','Récompense',inp('gr-t',r.t,'text','required placeholder="Un resto"'))+fld('gr-c','Prix en pièces (0 = récompense de rang)',inp('gr-c',r.cost||0,'number','min="0" inputmode="numeric"'))+fld('gr-l','Niveau minimum',inp('gr-l',r.lvl,'number','min="1" inputmode="numeric" required'))+'<div class="acts">'+(r.id?'<button type="button" class="btn terra" data-act="gmrwdel" data-id="'+r.id+'">Supprimer</button>':'')+'<button type="button" class="btn" data-act="close">Annuler</button><button class="btn primary" type="submit">Enregistrer</button></div></form>')};
 A.gmrwdel=function(e){var G=GM();G.rw=G.rw.filter(function(x){return x.id!==e.dataset.id});save();closeModal();render()};
-A.gmget=function(e){var r=GM().rw.filter(function(x){return x.id===e.dataset.id})[0];if(r){r.got=true;save();render();toast('Profites-en : '+r.t)}};
+A.gmget=function(e){var G=GM(),r=G.rw.filter(function(x){return x.id===e.dataset.id})[0],g=gmAll();if(!r)return;if(r.cost>0){if(g.coins<r.cost){toast('Pas assez de pièces');return}G.spent+=r.cost;r.n=(r.n||0)+1}else r.got=true;save();render();toast('Profites-en : '+r.t)};
 /* ----- objectifs (muscu) ----- */
 function GO(){var m=MU();if(!m.goals)m.goals=[];return m.goals}
 function goCur(g){var m=MU();if(g.kind==='lift'){var mx=0;m.sess.forEach(function(s){s.exs.forEach(function(e){if(e.n===g.ex)e.sets.forEach(function(x){if(x.done&&x.kg>mx)mx=x.kg})})});return mx>0?mx:g.start}
@@ -1534,7 +1545,7 @@ A.godel=function(e){var id=e.dataset.id;if(ui.cd!=='gd'+id){ui.cd='gd'+id;openGo
 A.gofocus=function(e){var gs=GO(),g=gs.filter(function(x){return x.id===e.dataset.id})[0];if(!g)return;if(g.focus){g.focus=false}else{var fo=gs.filter(function(x){return x.focus});if(fo.length>=2){fo[0].focus=false;toast('« '+fo[0].t+' » passe en arrière-plan')}g.focus=true}save();render()};
 A.goupd=function(e){var g=GO().filter(function(x){return x.id===e.dataset.id})[0];if(!g)return;openModal('<h2>'+esc(g.t)+'</h2><form data-form="goupd" data-id="'+g.id+'" style="display:flex;flex-direction:column;gap:12px">'+fld('gu-v','Valeur actuelle ('+(g.unit||'')+')',inp('gu-v',goCur(g),'text','inputmode="decimal" required'))+'<div class="acts"><button type="button" class="btn" data-act="close">Annuler</button><button class="btn primary" type="submit">Enregistrer</button></div></form>')};
 function gmForm(f,g){switch(f.dataset.form){
- case 'gmrw':{var G=GM(),id=f.dataset.id,t=g('gr-t').trim(),l=Math.max(2,Math.round(num(g('gr-l'),2)));if(!t)return true;var r=id?G.rw.filter(function(x){return x.id===id})[0]:null;if(r){r.t=t;r.lvl=l}else G.rw.push({id:uid(),t:t,lvl:l,got:false});return true}
+ case 'gmrw':{var G=GM(),id=f.dataset.id,t=g('gr-t').trim(),l=Math.max(1,Math.round(num(g('gr-l'),1))),c=Math.max(0,Math.round(num(g('gr-c'),0)));if(!t)return true;var r=id?G.rw.filter(function(x){return x.id===id})[0]:null;if(r){r.t=t;r.lvl=l;r.cost=c}else G.rw.push({id:uid(),t:t,lvl:l,cost:c,got:false,n:0});return true}
  case 'mogoal':{var id2=f.dataset.id,gs=GO(),o=id2?gs.filter(function(x){return x.id===id2})[0]:null;if(!o){o={id:uid(),hist:[],focus:false};gs.push(o)}
   o.t=g('go-t').trim();o.kind=g('go-k');o.ex=g('go-ex').trim();o.start=num(g('go-s'));o.target=num(g('go-g'));o.unit=g('go-u').trim();o.date=g('go-d');if(o.kind==='lift'&&o.ex&&!MU().mus[o.ex]&&!EXLIB[o.ex])MU().mus[o.ex]='Autre';return true}
  case 'goupd':{var o2=GO().filter(function(x){return x.id===f.dataset.id})[0];if(o2){o2.hist=o2.hist||[];o2.hist.push({d:todayK(),v:num(g('gu-v'))})}return true}}
