@@ -1629,7 +1629,7 @@ A.genbatch=function(){var t=todayK(),b=S.batch,date=b&&b.date>=t?b.date:nextBatc
  var nb=batchFromMenu(date,time);if(!nb){toast('Aucun plat prévu dans les 7 jours à partir du '+dLab(date)+' : remplis d’abord le menu');render();return}
  S.batch=nb;save();render();toast('Session générée depuis le menu')};
 function genBatchCard(){var b=S.batch,d=b&&b.date>=todayK()?b.date:nextBatchDay(todayK());
- return '<section class="card" style="display:flex;flex-direction:column;gap:10px"><h3>Depuis ton menu</h3><div class="small mute" style="line-height:1.5">Prend les plats prévus dans ton menu entre le <b>'+dLab(d)+'</b> et le prochain jour de batch (samedi ou mardi), calcule le coût estimé des courses de ces plats et construit le déroulé.</div><button class="btn primary" data-act="genbatch">'+(b&&ui.cd==='gb'?'Remplacer la session actuelle ?':'Générer la session depuis le menu')+'</button></section>'}
+ return '<section class="card" style="display:flex;flex-direction:column;gap:10px"><h3>Depuis ton menu</h3><div class="small mute" style="line-height:1.5">Prend les plats prévus dans ton menu à partir du <b>lendemain de la session</b> (pour un batch le '+dLab(d)+', ça commence le '+dLab(addD(d,1))+') jusqu’au prochain jour de batch (samedi ou mardi) inclus, calcule le coût estimé des courses de ces plats et construit le déroulé.</div><button class="btn primary" data-act="genbatch">'+(b&&ui.cd==='gb'?'Remplacer la session actuelle ?':'Générer la session depuis le menu')+'</button></section>'}
 
 /* ---------- glisser-déposer des repas ---------- */
 var DR={on:false,tm:0,iv:0,sx:0,sy:0,lx:0,ly:0,src:null,ghost:null,tgt:null,tk:null,end:0};
