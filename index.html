@@ -2067,7 +2067,7 @@ setInterval(function(){if(S&&$('#modal').hidden&&!TD.on&&(ui.tab==='accueil'))re
 S=loadLocal()||emptyState();
 route();render();
 connect();
-if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})})}
+if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0){var hadSW=!!navigator.serviceWorker.controller;navigator.serviceWorker.addEventListener('controllerchange',function(){if(hadSW&&!window.__rl&&$('#modal')&&$('#modal').hidden){window.__rl=1;location.reload()}});window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(function(r){try{r.update()}catch(e){}}).catch(function(){})})}
 })();
 </script>
 </body></html>
