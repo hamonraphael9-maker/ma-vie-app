@@ -1609,6 +1609,12 @@ function batchBuy(rs){var agg={},tot=0;rs.forEach(function(r){r.ing.forEach(func
  Object.keys(agg).forEach(function(k){var a=agg[k],sz=PACK[a.n];if(sz&&a.q>0&&PERISH[a.n]){var u=ppu(a.n,a.u)||(a.p/a.q);tot+=Math.ceil(a.q/sz-1e-6)*sz*u}else tot+=a.p});return Math.round(tot*100)/100}
 var BDAYS=[6,2];
 function nextBatchDay(from){for(var i=0;i<8;i++){var d=addD(from,i);if(BDAYS.indexOf(parse(d).getDay())>=0)return d}return from}
+function scaleQ(txt,n){if(!(n>1))return txt;txt=txt.replace(/\s*Pour un batch\s*:[^.]*\./i,'');var F={'½':.5,'¼':.25,'¾':.75};
+ var nf=function(v){return (Math.round(v*10)/10+'').replace('.',',')};
+ return txt.replace(/(½|¼|¾|\d+(?:[.,]\d+)?)(\s*)([A-Za-zÀ-ÿœŒ°%.]*)/g,function(m,q,sp,u){if(/^(min|minutes?|secondes?|sec|h|heures?|°|°C|%|cm|fois|à|ou|et)$/i.test(u.replace(/\.$/,''))||/^°/.test(u))return m;
+  var v=(F[q]!=null?F[q]:parseFloat(q.replace(',','.')))*n,un=u;
+  if(u==='g'){if(v>=1000){v=v/1000;un='kg'}else v=Math.round(v/5)*5}else if(u==='ml'){if(v>=1000){v=v/1000;un='L'}else v=Math.round(v/5)*5}else if(u==='cl')v=Math.round(v);else if(/^c\.?$/i.test(u)||u==='c')v=Math.round(v*2)/2;else v=Math.round(v*2)/2;
+  return nf(v)+sp+un})}
 function batchFromMenu(date,time){var cnt={},k,kk=1;while(kk<7&&BDAYS.indexOf(parse(addD(date,kk)).getDay())<0)kk++;
  for(var i=1;i<=kk;i++){var d=addD(date,i);['dej','din'].forEach(function(sl){var m=meal(d+'|'+sl);if(m&&m.rid){var r=mr(m);if(r&&rcat(r)==='plat'){var o=cnt[m.rid]||(cnt[m.rid]={r:r,dates:[],rs:[]});o.dates.push(d);o.rs.push(r)}}})}
  var list=Object.keys(cnt).map(function(x){return cnt[x]}),rep=list.filter(function(x){return x.dates.length>=2});if(!rep.length)rep=list;if(!rep.length)return null;
@@ -1618,7 +1624,7 @@ function batchFromMenu(date,time){var cnt={},k,kk=1;while(kk<7&&BDAYS.indexOf(pa
  rep.forEach(function(x){var r=x.r,fr=r.cons?r.cons.fr:3,cg=r.cons?r.cons.cg:0,f=0,c=0;
   x.dates.forEach(function(d){if(diffD(date,d)<=fr||!cg)f++;else c++});
   items.push({name:r.name,portions:x.dates.length,frigo:f,congelo:c,kcal:r.kcal});x.rs.forEach(function(y){rs.push(y)});
-  var tm=r.time||30;steps.push([mmH(cur),'Lancer : '+r.name+' ('+x.dates.length+' portions)',(r.steps&&r.steps.length?r.steps.join(' '):'Suis la recette.'),tm]);
+  var tm=r.time||30;steps.push([mmH(cur),'Lancer : '+r.name+' ('+x.dates.length+' portions)',(x.dates.length>1?'Quantités pour '+x.dates.length+' portions. ':'')+(r.steps&&r.steps.length?scaleQ(r.steps.join(' '),x.dates.length):'Suis la recette.'),tm]);
   endAll=Math.max(endAll,cur+tm);cur+=Math.max(10,Math.round(tm*0.4))});
  steps.push([mmH(endAll),'Refroidir et portionner','Laisse refroidir quelques minutes, puis répartis dans les boîtes, une portion par boîte.',20]);
  steps.push([mmH(endAll+20),'Étiqueter et ranger','Note le nom et la date sur chaque boîte, puis range au frigo ou au congélo.',10]);
