@@ -1659,7 +1659,7 @@ function batchFromMenu(date,time){var cnt={},k,kk=1;while(kk<7&&BDAYS.indexOf(pa
  var np=0;items.forEach(function(i){np+=i.portions});
  return {date:date,time:time,cost:batchBuy(rs),stocked:false,items:items,checks:[{t:'Faire les courses des plats du batch',d:0},{t:np+' boîtes de conservation prêtes',d:0},{t:'Étiquettes et marqueur',d:0},{t:'Faire de la place au frigo et au congélo',d:0}],steps:steps}}
 A.genbatch=function(){var t=todayK(),b=S.batch,date=b&&b.date>=t?b.date:nextBatchDay(t),time=b?b.time:'14:00';
- if(b&&ui.cd!=='gb'){ui.cd='gb';render();return}ui.cd='';
+ if(b&&b.date>=t&&ui.cd!=='gb'){ui.cd='gb';render();return}ui.cd='';
  var nb=batchFromMenu(date,time);if(!nb){toast('Aucun plat prévu dans les 7 jours à partir du '+dLab(date)+' : remplis d’abord le menu');render();return}
  S.batch=nb;save();render();toast('Session générée depuis le menu')};
 function genBatchCard(){var b=S.batch,d=b&&b.date>=todayK()?b.date:nextBatchDay(todayK());
