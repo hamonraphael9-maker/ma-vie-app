@@ -218,6 +218,28 @@ a.chipbtn{display:inline-flex;align-items:center;text-decoration:none}
 @keyframes slR{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:none}}
 @keyframes slU{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 main.sl-l{animation:slL .24s ease-out}main.sl-r{animation:slR .24s ease-out}main.sl-u{animation:slU .2s ease-out}
+@keyframes fxUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes fxZoom{from{opacity:0;transform:scale(.93)}to{opacity:1;transform:none}}
+@keyframes fxSide{from{opacity:0;transform:translateX(-22px)}to{opacity:1;transform:none}}
+@keyframes fxFade{from{opacity:0}to{opacity:1}}
+@keyframes fxBar{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes fxSheet{from{opacity:0;transform:translateY(34px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes fxToast{from{opacity:0;transform:translate(-50%,14px) scale(.96)}to{opacity:1;transform:translate(-50%,0) scale(1)}}
+html[data-fx=full] main.enter>div>*:not(.grid):not(.stats-grid),html[data-fx=full] main.enter .grid>*,html[data-fx=full] main.enter .stats-grid>*{animation:fxUp .55s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0)*55ms)}
+html[data-fx=full] main.enter.v-zoom>div>*:not(.grid):not(.stats-grid),html[data-fx=full] main.enter.v-zoom .grid>*,html[data-fx=full] main.enter.v-zoom .stats-grid>*{animation-name:fxZoom}
+html[data-fx=full] main.enter.v-side>div>*:not(.grid):not(.stats-grid),html[data-fx=full] main.enter.v-side .grid>*,html[data-fx=full] main.enter.v-side .stats-grid>*{animation-name:fxSide}
+html[data-fx=full] main.enter .bar i{transform-origin:left center;animation:fxBar .9s .2s cubic-bezier(.2,.8,.2,1) both}
+html[data-fx=full] main.enter .heat>i{animation:fxZoom .5s both;animation-delay:calc(var(--j,0)*14ms)}
+html[data-fx=soft] main.enter>div>*{animation:fxFade .3s both}
+html[data-fx=full] #modal:not([hidden]){animation:cfade .2s ease-out}
+html[data-fx=full] #modal:not([hidden]) .sheet{animation:fxSheet .32s cubic-bezier(.2,.9,.3,1)}
+html[data-fx=soft] #modal:not([hidden]){animation:cfade .15s ease-out}
+html:not([data-fx=none]) #toast:not([hidden]){animation:fxToast .3s cubic-bezier(.2,.9,.3,1.2)}
+html:not([data-fx=none]) .btn,html:not([data-fx=none]) .chipbtn{transition:transform .12s ease,background-color .15s,box-shadow .15s}
+html:not([data-fx=none]) .btn:active,html:not([data-fx=none]) .chipbtn:active{transform:scale(.95)}
+html:not([data-fx=none]) a.card:active{transform:scale(.985)}
+@media (hover:hover){html[data-fx=full] .card{transition:transform .2s ease,box-shadow .2s ease}html[data-fx=full] a.card:hover{transform:translateY(-2px)}}
+html[data-fx=none] *,html[data-fx=none] *::before,html[data-fx=none] *::after{animation:none!important;transition:none!important}
 @keyframes cfade{from{opacity:0}to{opacity:1}}
 @keyframes cpop{0%{transform:scale(.5);opacity:0}60%{transform:scale(1.07);opacity:1}100%{transform:scale(1)}}
 @keyframes cfall{to{transform:translateY(105vh) rotate(var(--r2));opacity:.9}}
@@ -921,7 +943,7 @@ function lineChart(vals,labels,max,goal,color,label){
  return s+'</svg>'
 }
 function viewStats(){
- if(S.start&&todayK()<S.start)return '<section class="card" style="display:flex;flex-direction:column;gap:8px"><h3>Les statistiques commencent bientôt</h3><p class="mute" style="margin:0">Habitudes, sport, journal, tâches et points démarrent le '+dayLong(S.start)+'. D’ici là, installe tes habitudes et tes séances : tout sera compté à partir de ce jour.</p></section>';
+ if(S.start&&todayK()<S.start)return '<div style="display:flex;flex-direction:column;gap:16px"><section class="card" style="display:flex;flex-direction:column;gap:8px"><h3>Les statistiques commencent bientôt</h3><p class="mute" style="margin:0">Habitudes, sport, journal, tâches et points démarrent le '+dayLong(S.start)+'. D’ici là, installe tes habitudes et tes séances : tout sera compté à partir de ce jour.</p></section></div>';
  var n=ui.sp||30,t=todayK(),days=[],i;for(i=n-1;i>=0;i--)days.push(addD(t,-i));
  var st=days.map(dayStat),thr=S.set.streak||80;
  var wh=st.filter(function(s){return s.p!==null}),avg=wh.length?wh.reduce(function(a,s){return a+s.p},0)/wh.length:0,okc=wh.filter(function(s){return s.p*100>=thr}).length;
@@ -1070,7 +1092,8 @@ function render(){
  ensureH();peRecur();autoAll();
  var y=window.scrollY,v={accueil:viewHome,taches:viewTasks,habitudes:viewHabits,stats:viewStats,muscu:viewMuscu,course:viewCourse,perfs:viewPerfs,cali:viewCali,mnew:viewNew,perso:viewPerso,budget:viewBudget,niveaux:viewNiveaux,mobj:viewObj,livres:viewLivres,journal:viewJournal,mcarnet:viewMuCarnet,mstats:viewMuStats,mpoids:viewMuPoids,menus:viewMenus,recettes:viewRecettes,stock:viewStock,courses:viewCourses,batch:viewBatch}[ui.tab];
  var sn=SG()?'<div class="chips subnav" role="navigation" aria-label="Sous-pages">'+SG().map(function(t){return '<a class="chipbtn'+(ui.tab===t[0]?' on':'')+'" href="#'+t[0]+'"'+(ui.tab===t[0]?' aria-current="page"':'')+'>'+t[1]+'</a>'}).join('')+'</div>':'';
- $('#app').innerHTML=header()+'<main'+(ui.dir?' class="sl-'+ui.dir+'"':'')+'>'+sn+v()+'</main>';ui.dir='';
+ var enter=!!ui.dir||!window.__fxd,vr=['stats','perso','budget','niveaux','mobj','livres','journal'].indexOf(ui.tab)>=0?' v-zoom':(MUK.indexOf(ui.tab)>=0?' v-side':'');if(!window.__fxt){window.__fxt=1;setTimeout(function(){window.__fxd=1},900)}document.documentElement.setAttribute('data-fx',fxMode());
+ $('#app').innerHTML=header()+'<main class="'+(ui.dir?'sl-'+ui.dir:'')+(enter?' enter'+vr:'')+'">'+sn+v()+'</main>';ui.dir='';if(enter)fxEnter();
  if(Math.abs(window.scrollY-y)>2)window.scrollTo(0,y);
  fxCheck();
  if(ui.pk){var pe=document.querySelector(ui.pk);if(pe&&fxMode()!=='none')pe.classList.add('pop');ui.pk=''}
@@ -1080,6 +1103,8 @@ function render(){
 function openModal(h){var m=$('#modal');m.innerHTML='<div class="sheet" role="dialog" aria-modal="true">'+h+'</div>';m.hidden=false}
 function closeModal(){var m=$('#modal');m.hidden=true;m.innerHTML=''}
 var FXI={tro:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4zM17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>',med:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="15" r="6"/><path d="M8.5 3 12 10l3.5-7M12 12.4l.9 1.8 2 .3-1.4 1.4.3 2-1.8-.9-1.8.9.3-2-1.4-1.4 2-.3z"/></svg>',fl:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 1-9z"/></svg>'};
+function fxEnter(){try{var m=document.querySelector('main.enter');if(!m)return;var i=0;[].forEach.call(m.querySelectorAll(':scope>div>*:not(.grid):not(.stats-grid),.grid>*,.stats-grid>*'),function(e){e.style.setProperty('--i',Math.min(i++,9))});[].forEach.call(m.querySelectorAll('.heat'),function(h){[].forEach.call(h.children,function(c,k){c.style.setProperty('--j',Math.min(k,40))})});
+ if(fxMode()==='full')[].forEach.call(m.querySelectorAll('.kpi b'),function(b){if(b.childNodes.length!==1||b.firstChild.nodeType!==3)return;var tx=b.textContent.trim();if(!/^\d{1,5}$/.test(tx))return;var n=+tx,t0=performance.now();if(n<2)return;(function st(t){var k=Math.min(1,(t-t0)/700);b.textContent=Math.round(n*(1-Math.pow(1-k,3)));if(k<1)requestAnimationFrame(st);else b.textContent=tx})(t0)})}catch(e){}}
 function fxMode(){var m=(S&&S.set&&S.set.fx)||'full';try{if(window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches)return 'none'}catch(e){}return m}
 var fxQ=[],fxOn=false;
 function fxPush(o){if(fxMode()==='none'){if(o.toast)toast(o.toast);return}fxQ.push(o);if(!fxOn)fxNext()}
